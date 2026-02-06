@@ -41,16 +41,19 @@ app.use((req, res, next) => {
 const b64encode = (data) => Buffer.from(JSON.stringify(data)).toString("base64");
 const b64decode = (data) => JSON.parse(Buffer.from(data, "base64").toString("utf-8"));
 
-// Build payment requirements for 402 response (x402 v2 format)
+// Build payment requirements for 402 response (x402 v1 format - more compatible)
 function buildPaymentRequired(resource) {
   return {
-    x402Version: 2,
+    x402Version: 1,
     accepts: [{
       scheme: "exact",
       network: NETWORK,
       maxAmountRequired: PRICE_USDC,
       asset: USDC_ADDRESS,
       resource: resource || "/fulfill",
+      description: "Intent fulfillment",
+      mimeType: "application/json",
+      outputSchema: {},
       payTo: PROVIDER_WALLET,
       maxTimeoutSeconds: 300,
       extra: {
@@ -142,7 +145,7 @@ app.post("/fulfill", async (req, res) => {
       res.setHeader("PAYMENT-REQUIRED", b64encode(paymentRequired));
       res.status(402).json({
         error: "Payment required",
-        x402Version: 2,
+        x402Version: 1,
         message: `Pay ${parseInt(PRICE_USDC) / 1e6} USDC to ${PROVIDER_WALLET}`
       });
       return;
@@ -217,7 +220,7 @@ app.get("/health", (req, res) => {
   res.json({ 
     status: "ok", 
     x402: true,
-    x402Version: 2,
+    x402Version: 1,
     realPayments: !!PROVIDER_PRIVATE_KEY,
     network: NETWORK,
     payTo: PROVIDER_WALLET,
