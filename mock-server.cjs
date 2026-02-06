@@ -169,15 +169,19 @@ app.post("/fulfill", async (req, res) => {
       return;
     }
     
-    // Extract authorization from payment payload
-    const auth = payment.payload?.authorization || payment.authorization || payment;
+    // Extract authorization from payment payload (v1 format: payload.authorization + payload.signature)
+    const auth = payment.payload?.authorization || payment.authorization;
+    const sig = payment.payload?.signature || payment.signature;
     
-    if (!auth.from || !auth.signature) {
+    if (!auth || !auth.from) {
       throw new Error("Invalid payment: missing authorization data");
     }
+    if (!sig) {
+      throw new Error("Invalid payment: missing signature");
+    }
     
-    // Execute the real transfer
-    const settlement = await executeTransfer(auth);
+    // Execute the real transfer - add signature to auth object
+    const settlement = await executeTransfer({ ...auth, signature: sig });
     
     console.log(`${"=".repeat(60)}`);
     console.log(`✅ REAL PAYMENT SETTLED!`);
