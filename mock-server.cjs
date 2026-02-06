@@ -1,5 +1,8 @@
 /**
  * Mock x402 provider for demo purposes
+ * 
+ * For hackathon demo: Always accepts requests and returns mock payment verification.
+ * In production, use real x402 middleware for payment verification.
  */
 const express = require("express");
 
@@ -10,58 +13,42 @@ const PROVIDER_WALLET = process.env.PROVIDER_WALLET || "0xe08Ad6b0975222f410Eb2f
 const PRICE = "$0.01";
 const NETWORK = "eip155:84532";
 
-// Simulate x402 payment response
+// CORS headers
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Payment, X-Payment-Signature");
+  res.setHeader("Access-Control-Expose-Headers", "X-Payment, X-Payment-Response");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
+// Fulfill endpoint - always accepts for demo
 app.post("/fulfill", (req, res) => {
   try {
-    const xPayment = req.headers["x-payment"];
-    
-    // If no payment header, return 402 with payment requirements
-    if (!xPayment) {
-      const paymentSpec = {
-        accepts: [{
-          scheme: "exact",
-          network: NETWORK,
-          maxAmountRequired: PRICE,
-          resource: "/fulfill",
-          payTo: PROVIDER_WALLET,
-          maxTimeoutSeconds: 300
-        }],
-        facilitator: "https://facilitator.x402.org",
-        version: "1.0"
-      };
-      
-      res.setHeader("X-Payment", Buffer.from(JSON.stringify(paymentSpec)).toString("base64"));
-      res.setHeader("Access-Control-Expose-Headers", "X-Payment, X-Payment-Response");
-      return res.status(402).json({
-        error: "Payment Required",
-        message: "x402 payment required to access this resource",
-        price: PRICE,
-        network: NETWORK,
-        payTo: PROVIDER_WALLET
-      });
-    }
-    
-    // Payment received - simulate verification and fulfillment
     const body = req.body || {};
-    const intentId = body.intentId;
+    const intentId = body.intentId || "unknown";
     const input = body.input;
     
-    // Simulate a transaction hash
+    // Check if payment header was provided (for logging)
+    const xPayment = req.headers["x-payment"];
+    console.log(`Fulfill request: intentId=${intentId}, hasPayment=${!!xPayment}`);
+    
+    // Generate mock transaction hash
     const mockTxHash = "0x" + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join("");
     
-    // Simulate work result
+    // Generate result
     const preview = typeof input === "string" ? input.substring(0, 50) : JSON.stringify(input || {}).substring(0, 50);
-    const result = "Fulfilled intent " + intentId + ": " + preview + "...";
+    const result = `Fulfilled intent ${intentId}: ${preview}...`;
     
-    // Return x402 payment response header
+    // Set payment response header (mock settlement)
     const paymentResponse = {
       success: true,
-      txHash: mockTxHash,
+      transaction: mockTxHash,
       network: NETWORK,
       amount: PRICE
     };
     res.setHeader("X-Payment-Response", Buffer.from(JSON.stringify(paymentResponse)).toString("base64"));
-    res.setHeader("Access-Control-Expose-Headers", "X-Payment, X-Payment-Response");
     
     res.json({
       success: true,
@@ -88,6 +75,7 @@ app.get("/health", (req, res) => {
     status: "ok", 
     x402: true,
     mock: true,
+    demo: true,
     payTo: PROVIDER_WALLET 
   });
 });
@@ -96,4 +84,5 @@ const PORT = process.env.PORT || 3002;
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Mock x402 provider on http://localhost:" + PORT);
   console.log("Payments to: " + PROVIDER_WALLET);
+  console.log("Mode: DEMO (always accepts)");
 });
