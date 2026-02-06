@@ -1,0 +1,11 @@
+{
+  "name": "x402-mock-provider",
+  "version": "1.0.0",
+  "main": "mock-server.cjs",
+  "scripts": {
+    "start": "node mock-server.cjs"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
