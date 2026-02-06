@@ -14,7 +14,7 @@ app.use(express.json());
 const PROVIDER_WALLET = process.env.PROVIDER_WALLET || "0xe08Ad6b0975222f410Eb2fa0e50c7Ee8FBe78F2D";
 const PROVIDER_PRIVATE_KEY = process.env.PROVIDER_PRIVATE_KEY; // For submitting the transfer
 const PRICE_USDC = "10000"; // 0.01 USDC (6 decimals)
-const NETWORK = "eip155:84532"; // Base Sepolia
+const NETWORK = "base-sepolia"; // V1 network name for Base Sepolia
 const RPC_URL = process.env.RPC_URL || "https://sepolia.base.org";
 
 // Base Sepolia USDC contract
