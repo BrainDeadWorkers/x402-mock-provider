@@ -39,6 +39,8 @@ function safeBase64Decode(data) {
 }
 
 // Build x402 v2 payment requirements
+// Note: EIP-3009 requires EIP-712 domain params (name, version) in extra
+// For USDC on Base Sepolia, name="USD Coin" version="2" (standard USDC contract)
 function buildPaymentRequirements() {
   return {
     scheme: "exact",
@@ -48,7 +50,8 @@ function buildPaymentRequirements() {
     payTo: PROVIDER_WALLET,
     maxTimeoutSeconds: 300,
     extra: {
-      name: "USDC",
+      name: "USD Coin",   // EIP-712 domain name for USDC
+      version: "2",       // EIP-712 domain version for USDC
       decimals: 6
     }
   };
